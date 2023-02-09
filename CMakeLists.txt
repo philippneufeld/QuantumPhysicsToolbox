@@ -9,28 +9,34 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 # define project
-set(QPT_Project "QuantumPhysicsToolbox")
-project (QPT_Project VERSION 1.0)
+set(QPT_PROJECT "QuantumPhysicsToolbox")
+project (QPT_PROJECT VERSION 1.0)
 
-# include directories
-add_executable("Test" "main.cpp" )
+set(QPT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/QPT")
+set(QPT_SOURCES 
+   "${QPT_SOURCE_DIR}/test.cpp")
+set(QPT_LIB_TARGET "QPT")
+add_library("${QPT_LIB_TARGET}" STATIC "${QPT_SOURCES}")
 
-# require C++17 for library and all children using it
-target_compile_features("Test" PUBLIC cxx_std_17)
+# set library properties
+target_compile_features("${QPT_LIB_TARGET}" PUBLIC cxx_std_14)
+target_include_directories("${QPT_LIB_TARGET}" INTERFACE "${CMAKE_SOURCE_DIR}")
 
-# set include directory as interface
-set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}")
-target_include_directories("Test" INTERFACE "${INCLUDE_DIR}")
-
-# find Eigen3
+# add Eigen3 dependency
 find_package(Eigen3 REQUIRED)
-target_link_libraries("Test" PUBLIC Eigen3::Eigen)
+target_link_libraries("${QPT_LIB_TARGET}" PUBLIC Eigen3::Eigen)
 
+# add HDF5 dependency
 find_package(HDF5 REQUIRED)
-target_include_directories("Test" PUBLIC "${HDF5_INCLUDE_DIRS}")
-target_link_libraries("Test" PUBLIC "${HDF5_LIBRARIES}")
+target_link_libraries("${QPT_LIB_TARGET}" PUBLIC "${HDF5_LIBRARIES}")
 
-find_package(HighFive REQUIRED)
-target_link_libraries("Test" PUBLIC HighFive)
-target_compile_definitions("Test" PUBLIC "-DH5_USE_EIGEN 1")
+# put the built library file into the <build>/lib/ folder
+set(BUILD_LIB_DIR "${CMAKE_BINARY_DIR}/lib")
+set_target_properties("${QPT_LIB_TARGET}" 
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${BUILD_LIB_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY "${BUILD_LIB_DIR}"
+    RUNTIME_OUTPUT_DIRECTORY "${BUILD_LIB_DIR}"
+)
 
+add_subdirectory("Apps")
