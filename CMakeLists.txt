@@ -28,6 +28,7 @@ target_link_libraries("${QPT_LIB_TARGET}" PUBLIC Eigen3::Eigen)
 
 # add HDF5 dependency
 find_package(HDF5 REQUIRED)
+target_include_directories("${QPT_LIB_TARGET}" PUBLIC "${HDF5_INCLUDE_DIRECTORIES}")
 target_link_libraries("${QPT_LIB_TARGET}" PUBLIC "${HDF5_LIBRARIES}")
 
 # put the built library file into the <build>/lib/ folder
