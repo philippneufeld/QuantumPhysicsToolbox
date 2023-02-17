@@ -40,4 +40,8 @@ set_target_properties("${QPT_LIB_TARGET}"
     RUNTIME_OUTPUT_DIRECTORY "${BUILD_LIB_DIR}"
 )
 
+find_package(Boost REQUIRED)
+target_include_directories("${QPT_LIB_TARGET}" PUBLIC "${Boost_INCLUDE_DIRS}")
+target_link_libraries("${QPT_LIB_TARGET}" PUBLIC "${Boost_LIBRARIES}")
+
 add_subdirectory("Apps")

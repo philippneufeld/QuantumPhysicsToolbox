@@ -4,6 +4,7 @@
 #include <QPT/HDF5/H5TypeTraits.h>
 
 #include <Eigen/Dense>
+#include <boost/lambda/lambda.hpp>
 #include <iostream>
 
 using namespace QPT;
