@@ -4,17 +4,15 @@
 #include <QPT/HDF5/H5TypeTraits.h>
 
 #include <Eigen/Dense>
-#include <boost/lambda/lambda.hpp>
 #include <iostream>
 
 using namespace QPT;
 
 template <typename T>
 void test(const T& val) {
-  std::cout << H5TypeTraits<T>().GetNativeType() << std::endl;
-  std::cout << H5TypeTraits<T>().GetRank() << std::endl;
-  std::cout << H5TypeTraits<T>().GetSize(val) << std::endl;
-  for (auto d : H5TypeTraits<T>().GetShape(val)) std::cout << d << ", ";
+  std::cout << H5TypeHandler<T>().GetRank() << std::endl;
+  std::cout << H5TypeHandler<T>().GetSize(val) << std::endl;
+  for (auto d : H5TypeHandler<T>().GetShape(val)) std::cout << d << ", ";
   std::cout << std::endl;
 }
 
