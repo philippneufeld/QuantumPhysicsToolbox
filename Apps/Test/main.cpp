@@ -1,7 +1,6 @@
 // Philipp Neufeld, 2023
 
-// #include <QPT/HDF5/H5Traits.h>
-#include <QPT/HDF5/H5TypeTraits.h>
+#include <QPT/Serialization.h>
 
 #include <Eigen/Dense>
 #include <iostream>
@@ -9,24 +8,42 @@
 using namespace QPT;
 
 template <typename T>
-void test(const T& val) {
-  std::cout << H5TypeHandler<T>().GetRank() << std::endl;
-  std::cout << H5TypeHandler<T>().GetSize(val) << std::endl;
-  for (auto d : H5TypeHandler<T>().GetShape(val)) std::cout << d << ", ";
+void Print(const T* data, std::size_t n) {
+  for (int i = 0; i < n; i++) std::cout << data[i] << " ";
+  std::cout << std::endl << std::endl;
+}
+
+template <typename T>
+std::enable_if_t<std::is_fundamental_v<T>> Print(const T& data) {
+  std::cout << data << " ";
+}
+
+template <typename T>
+std::enable_if_t<!std::is_fundamental_v<T>> Print(const T& data) {
+  for (int i = 0; i < SerializationTraits<T>::GetShape(data)[0]; i++)
+    Print(data[i]);
   std::cout << std::endl;
 }
 
 int main(int argc, char* argv[]) {
+  // prepare data
   std::vector<std::vector<float>> val(5);
-  for (auto& v : val) v.resize(9);
-  test(val);
+  for (int i = 0; i < val.size(); i++) {
+    val[i].resize(4);
+    for (int j = 0; j < val[i].size(); j++) val[i][j] = i * j;
+  }
 
-  double val2[8][3][12];
-  test(val2);
+  Print(val);
+  auto serialized = Serialize(val);
+  Print(serialized.GetData(), serialized.GetSize());
+  Print(Deserialize<decltype(val)>(serialized.GetData(), {5, 4}));
 
-  std::vector<int> val3[8][3][12];
-  val3[0][0][0].resize(4);
-  test(val3);
+  auto val2 = val[1];
+
+  Print(val2);
+  auto serialized2 = Serialize(val2);
+  Print(serialized2.GetData(), serialized2.GetSize());
+  Print(Deserialize<decltype(val2)>(serialized2.GetData(), {4}));
 
   return 0;
 }
