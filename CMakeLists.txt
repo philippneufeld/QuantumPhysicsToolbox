@@ -19,7 +19,7 @@ set(QPT_LIB_TARGET "QPT")
 add_library("${QPT_LIB_TARGET}" STATIC "${QPT_SOURCES}")
 
 # set library properties
-target_compile_features("${QPT_LIB_TARGET}" PUBLIC cxx_std_14)
+target_compile_features("${QPT_LIB_TARGET}" PUBLIC cxx_std_17)
 target_include_directories("${QPT_LIB_TARGET}" INTERFACE "${CMAKE_SOURCE_DIR}")
 
 # add Eigen3 dependency

@@ -26,22 +26,23 @@ std::enable_if_t<!std::is_fundamental_v<T>> Print(const T& data) {
 
 int main(int argc, char* argv[]) {
   // prepare data
-  std::list<std::vector<float>> val;
+  // std::list<std::vector<float>> val;
+  std::vector<float[4]> val(5);
   for (int i = 0; i < 5; i++) {
-    val.push_back({});
-    for (int j = 0; j < 4; j++) val.back().push_back(1 + i * j);
+    // val.push_back({});
+    // for (int j = 0; j < 4; j++) val.back().push_back(1 + i * j);
+    for (int j = 0; j < 4; j++) val[i][j] = (1 + i * j);
   }
 
-  Print(val);
+  // Print(val);
   auto serialized = Serialize(val);
   Print(serialized.GetData(), serialized.GetSize());
-  Print(Deserialize<decltype(val)>(serialized.GetData(), {5, 4}));
+  Print(Deserialize<std::vector<std::array<float, 4>>>(serialized.GetData(), {5, 4}));
 
-  auto val2 = val.front();
-  Print(val2);
+  auto& val2 = val.front();
   auto serialized2 = Serialize(val2);
   Print(serialized2.GetData(), serialized2.GetSize());
-  Print(Deserialize<decltype(val2)>(serialized2.GetData(), {4}));
+  Print(Deserialize<std::list<float>>(serialized2.GetData(), {4}));
 
   return 0;
 }

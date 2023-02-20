@@ -16,7 +16,7 @@ struct TypelistSize<Typelist<Ts...>> {
   constexpr static auto value = sizeof...(Ts);
 };
 template <typename TL>
-constexpr static bool TypelistSize_v = TypelistSize<TL, T>::value;
+constexpr static bool TypelistSize_v = TypelistSize<TL>::value;
 
 // TypelistContains
 template <typename TL, typename T>

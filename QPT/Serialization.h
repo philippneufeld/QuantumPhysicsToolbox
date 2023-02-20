@@ -4,6 +4,7 @@
 #define QPT_SERIALIZATION_H_
 
 // Includes
+#include <cstdint>
 #include <array>
 #include <cassert>
 #include <list>
@@ -69,10 +70,10 @@ template <typename T>
 struct SerializationTraits<
     T, std::void_t<decltype(SerializationTraitsHelper<T>{})>>
     : SerializationTraits<decltype(*SerializationTraitsHelper<T>::Begin(
-          std::declval<T>()))> {
+          std::declval<T&>()))> {
   using Inner_t =
       SerializationTraits<decltype(*SerializationTraitsHelper<T>::Begin(
-          std::declval<T>()))>;
+          std::declval<T&>()))>;
 
   using Native_t = typename Inner_t::Native_t;
   using Storage_t = typename Inner_t::Storage_t;
@@ -80,7 +81,8 @@ struct SerializationTraits<
   constexpr static std::size_t GetRank() { return 1 + Inner_t::GetRank(); }
   static std::size_t GetSize(const T& val) {
     std::size_t size = SerializationTraitsHelper<T>::GetSize(val);
-    if (size != 0) size *= Inner_t::GetSize(*val.begin());
+    const auto it = SerializationTraitsHelper<T>::Begin(val);
+    if (size != 0) size *= Inner_t::GetSize(*it);
     return size;
   }
   static void GetShape(const T& val, std::size_t* shape) {
@@ -117,20 +119,20 @@ struct SerializationTraits<
   static void Serialize(const T& val, Storage_t* buffer) {
     std::size_t outerSize = SerializationTraitsHelper<T>::GetSize(val);
     if (outerSize != 0) {
-      std::size_t stride = Inner_t::GetSize(*val.begin());
       auto it = SerializationTraitsHelper<T>::Begin(val);
       const auto end = SerializationTraitsHelper<T>::End(val);
-      while (it != end) Inner_t::Serialize(*it++, buffer);
+      std::size_t stride = Inner_t::GetSize(*it);
+      for (; it != end; it++, buffer += stride) Inner_t::Serialize(*it, buffer);
     }
   }
 
   static void Deserialize(T& val, const Storage_t* buffer) {
     std::size_t outerSize = SerializationTraitsHelper<T>::GetSize(val);
     if (outerSize != 0) {
-      std::size_t stride = Inner_t::GetSize(*val.begin());
       auto it = SerializationTraitsHelper<T>::Begin(val);
       const auto end = SerializationTraitsHelper<T>::End(val);
-      while (it != end) Inner_t::Deserialize(*it++, buffer);
+      std::size_t stride = Inner_t::GetSize(*it);
+      for (; it != end; it++, buffer += stride) Inner_t::Deserialize(*it, buffer);
     }
   }
 };
@@ -141,23 +143,23 @@ struct SerializationTraits<
 
 template <typename T, std::size_t N>
 struct SerializationTraitsHelper<T[N]> {
-  using Element_t = T;
+  using Ref_t = T(&)[N];
+  using CRef_t = const T(&)[N];
   template <typename Dummy = T>
   static std::enable_if_t<IsSerializationTrivialNative_v<Dummy>, const T*>
-  SerializeTrivial(const T (&val)[N]) {
+  SerializeTrivial(const T(&val)[N]) {
     return val;
   }
-  static void Prepare(T (&val)[N], std::size_t n) { assert(n == N); }
-  static T* Begin(T (&val)[N]) { return val; }
-  static T* End(T (&val)[N]) { return val + N; }
-  static const T* Begin(const T (&val)[N]) { return val; }
-  static const T* End(const T (&val)[N]) { return val + N; }
-  static constexpr std::size_t GetSize(const T (&val)[N]) { return N; }
+  static void Prepare(T(&val)[N], std::size_t n) { assert(n == N); }
+  static T* Begin(T(&val)[N]) { return val; }
+  static T* End(T(&val)[N]) { return val + N; }
+  static const T* Begin(const T(&val)[N]) { return val; }
+  static const T* End(const T(&val)[N]) { return val + N; }
+  static constexpr std::size_t GetSize(const T(&val)[N]) { return N; }
 };
 
 template <typename T, std::size_t N>
 struct SerializationTraitsHelper<std::array<T, N>> {
-  using Element_t = T;
   template <typename Dummy = T>
   static std::enable_if_t<IsSerializationTrivialNative_v<Dummy>, const T*>
   SerializeTrivial(const std::array<T, N>& val) {
@@ -175,7 +177,6 @@ struct SerializationTraitsHelper<std::array<T, N>> {
 
 template <typename T>
 struct SerializationTraitsHelper<std::vector<T>> {
-  using Element_t = T;
   template <typename Dummy = T>
   static std::enable_if_t<IsSerializationTrivialNative_v<Dummy>, const T*>
   SerializeTrivial(const std::vector<T>& val) {
@@ -191,7 +192,6 @@ struct SerializationTraitsHelper<std::vector<T>> {
 
 template <typename T>
 struct SerializationTraitsHelper<std::list<T>> {
-  using Element_t = T;
   static void Prepare(std::list<T>& val, std::size_t n) { val.resize(n); }
   static auto Begin(const std::list<T>& val) { return val.begin(); }
   static auto End(const std::list<T>& val) { return val.end(); }
@@ -235,6 +235,12 @@ class Serializer<T,
  private:
   const T& m_val;
 };
+template <typename T, typename Dummy>
+class Serializer<T&, Dummy> : public Serializer<T> {};
+template <typename T, typename Dummy>
+class Serializer<const T, Dummy> : public Serializer<T> {};
+template <typename T, typename Dummy>
+class Serializer<volatile T, Dummy> : public Serializer<T> {};
 template <typename T>
 Serializer<T> Serialize(const T& val) {
   return Serializer<T>(val);
