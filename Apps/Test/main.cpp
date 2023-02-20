@@ -20,17 +20,16 @@ std::enable_if_t<std::is_fundamental_v<T>> Print(const T& data) {
 
 template <typename T>
 std::enable_if_t<!std::is_fundamental_v<T>> Print(const T& data) {
-  for (int i = 0; i < SerializationTraits<T>::GetShape(data)[0]; i++)
-    Print(data[i]);
+  for (auto it = data.begin(); it != data.end(); it++) Print(*it);
   std::cout << std::endl;
 }
 
 int main(int argc, char* argv[]) {
   // prepare data
-  std::vector<std::vector<float>> val(5);
-  for (int i = 0; i < val.size(); i++) {
-    val[i].resize(4);
-    for (int j = 0; j < val[i].size(); j++) val[i][j] = i * j;
+  std::list<std::vector<float>> val;
+  for (int i = 0; i < 5; i++) {
+    val.push_back({});
+    for (int j = 0; j < 4; j++) val.back().push_back(1 + i * j);
   }
 
   Print(val);
@@ -38,8 +37,7 @@ int main(int argc, char* argv[]) {
   Print(serialized.GetData(), serialized.GetSize());
   Print(Deserialize<decltype(val)>(serialized.GetData(), {5, 4}));
 
-  auto val2 = val[1];
-
+  auto val2 = val.front();
   Print(val2);
   auto serialized2 = Serialize(val2);
   Print(serialized2.GetData(), serialized2.GetSize());
