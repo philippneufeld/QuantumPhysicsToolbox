@@ -46,11 +46,18 @@ int main(int argc, char* argv[]) {
   Print(serialized2.GetData(), serialized2.GetSize());
   Print(Deserialize<std::list<float>>(serialized2.GetData(), {4}));
 
-  if (auto file = H5File::Open("test.h5", H5File_DEFAULT)) {
-    std::cout << "Open" << std::endl;
-  } else {
-    std::cout << "Not open" << std::endl;
-  }
+  auto file = H5File::Open("test.h5", H5File_TRUNCATE);
+
+  std::cout << file->HasSubgroup("subA") << std::endl;
+  auto subA = file->OpenSubgroup("subA");
+  file->OpenSubgroup("subA");
+  file->OpenSubgroup("subB");
+  file->OpenSubgroup("subC");
+  std::cout << subA.has_value() << " " << file->HasSubgroup("subA")
+            << std::endl;
+
+  auto callback = [](auto c) { std::cout << c << std::endl; };
+  file->EnumerateSubgroups(callback);
 
   return 0;
 }

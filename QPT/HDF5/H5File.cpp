@@ -4,13 +4,14 @@
 
 namespace QPT {
 
-H5File::H5File(hid_t hid) : m_file(hid) {}
+H5File::H5File(hid_t file, hid_t root) : H5Group(root), m_file(file) {}
 
-H5File::H5File(H5File&& rhs) : m_file(rhs.m_file) {
+H5File::H5File(H5File&& rhs) : H5Group(std::move(rhs)), m_file(rhs.m_file) {
   rhs.m_file = H5I_INVALID_HID;
 }
 
 H5File& H5File::operator=(H5File&& rhs) {
+  H5Group::operator=(std::move(rhs));
   std::swap(m_file, rhs.m_file);
   return *this;
 }
@@ -23,6 +24,7 @@ H5File::~H5File() {
 std::optional<H5File> H5File::Open(const std::string& name,
                                    H5FileOpenFlag flag) {
   hid_t file = H5I_INVALID_HID;
+  hid_t root = H5I_INVALID_HID;
 
   H5E_BEGIN_TRY
   if (flag & (H5File_MUST_NOT_EXIST | H5File_TRUNCATE)) {
@@ -38,14 +40,14 @@ std::optional<H5File> H5File::Open(const std::string& name,
     if (file < 0 && !(flag & H5File_MUST_EXIST))
       file = H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
   }
+
+  if (file < 0) return std::nullopt;
+  root = H5Gopen2(file, "/", H5P_DEFAULT);
+  if (root < 0) return std::nullopt;
+
   H5E_END_TRY
 
-  return (file >= 0) ? std::make_optional(H5File(file)) : std::nullopt;
+  return std::make_optional(H5File(file, root));
 }
-
-// H5FileGroup H5File::OpenRootGroup() {
-//   if (!IsOpen()) return H5I_INVALID_HID;
-//   return H5Gopen2(m_file, "/", H5P_DEFAULT);
-// }
 
 }  // namespace QPT

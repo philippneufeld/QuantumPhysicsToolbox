@@ -15,6 +15,7 @@ project (QPT_PROJECT VERSION 1.0)
 set(QPT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/QPT")
 set(QPT_SOURCES 
    "${QPT_SOURCE_DIR}/HDF5/H5Object.cpp"
+   "${QPT_SOURCE_DIR}/HDF5/H5Group.cpp"
    "${QPT_SOURCE_DIR}/HDF5/H5File.cpp"
    )
 set(QPT_LIB_TARGET "QPT")

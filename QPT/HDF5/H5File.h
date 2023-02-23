@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 
-#include "H5Object.h"
+#include "H5Group.h"
 
 namespace QPT {
 
@@ -19,13 +19,13 @@ enum H5FileOpenFlag {
   H5File_TRUNCATE = 4,
 };
 
-class H5File {
+class H5File : public H5Group {
  public:
   static std::optional<H5File> Open(const std::string& name,
                                     H5FileOpenFlag flag);
 
  protected:
-  H5File(hid_t hid);
+  H5File(hid_t file, hid_t root);
 
  public:
   virtual ~H5File();
@@ -34,8 +34,6 @@ class H5File {
   H5File(H5File&& rhs);
   H5File& operator=(const H5File&) = delete;
   H5File& operator=(H5File&& rhs);
-
-  // H5FileGroup OpenRootGroup();
 
  private:
   hid_t m_file;

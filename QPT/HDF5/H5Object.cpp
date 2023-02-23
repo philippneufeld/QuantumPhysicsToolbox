@@ -6,8 +6,6 @@ namespace QPT {
 
 H5Object::H5Object(hid_t hid) : m_hid(hid) {}
 
-H5Object::H5Object() : H5Object(H5I_INVALID_HID) {}
-
 H5Object::~H5Object() {
   if (IsValid()) H5Idec_ref(m_hid);
   m_hid = H5I_INVALID_HID;

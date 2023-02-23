@@ -11,11 +11,8 @@
 namespace QPT {
 
 class H5Object {
- protected:
-  H5Object(hid_t hid);
-
  public:
-  H5Object();
+  H5Object(hid_t hid);
   virtual ~H5Object();
 
   H5Object(const H5Object&);
@@ -24,6 +21,9 @@ class H5Object {
   H5Object& operator=(H5Object&& rhs);
 
   bool IsValid() const;
+
+ protected:
+  hid_t GetHandle() const { return m_hid; }
 
  private:
   hid_t m_hid;
