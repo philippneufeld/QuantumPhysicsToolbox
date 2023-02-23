@@ -1,5 +1,6 @@
 // Philipp Neufeld, 2023
 
+#include <QPT/HDF5/H5File.h>
 #include <QPT/Serialization.h>
 
 #include <Eigen/Dense>
@@ -37,12 +38,19 @@ int main(int argc, char* argv[]) {
   // Print(val);
   auto serialized = Serialize(val);
   Print(serialized.GetData(), serialized.GetSize());
-  Print(Deserialize<std::vector<std::array<float, 4>>>(serialized.GetData(), {5, 4}));
+  Print(Deserialize<std::vector<std::array<float, 4>>>(serialized.GetData(),
+                                                       {5, 4}));
 
   auto& val2 = val.front();
   auto serialized2 = Serialize(val2);
   Print(serialized2.GetData(), serialized2.GetSize());
   Print(Deserialize<std::list<float>>(serialized2.GetData(), {4}));
+
+  if (auto file = H5File::Open("test.h5", H5File_DEFAULT)) {
+    std::cout << "Open" << std::endl;
+  } else {
+    std::cout << "Not open" << std::endl;
+  }
 
   return 0;
 }

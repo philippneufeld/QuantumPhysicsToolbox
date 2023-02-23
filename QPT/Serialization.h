@@ -61,8 +61,6 @@ struct SerializationTraits<
   }
 };
 
-namespace Detail {}
-
 // SerializationTraitsHelper (can later be specialized later)
 template <typename T>
 struct SerializationTraitsHelper;
