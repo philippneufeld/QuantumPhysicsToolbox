@@ -96,6 +96,13 @@ class H5TypeTraits<std::uint64_t> {
   static hid_t GetNativeType() { return H5T_NATIVE_UINT64; }
 };
 
+template <>
+class H5TypeTraits<char> {
+ public:
+  static hid_t GetStorageType() { return H5T_STD_U8LE; }
+  static hid_t GetNativeType() { return H5T_NATIVE_CHAR; }
+};
+
 }  // namespace QPT
 
 #endif  // !QPT_HDF5_H5TYPES_H_

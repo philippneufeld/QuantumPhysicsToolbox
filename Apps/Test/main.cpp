@@ -58,6 +58,8 @@ int main(int argc, char* argv[]) {
     std::cout << "Write successful (val2)" << std::endl;
   if (subA->SetAttribute("test3", val3))
     std::cout << "Write successful (val3)" << std::endl;
+  if (subA->SetAttribute("test4", std::string("This is a test string")))
+    std::cout << "Write successful (val4)" << std::endl;
   if (subA->SetAttribute("test", val))
     std::cout << "Second write successful (val)" << std::endl;
   if (!subA->SetAttribute("test", val2))
@@ -95,6 +97,9 @@ int main(int argc, char* argv[]) {
   if (auto ret = subA->GetAttribute<std::vector<float>>("test2")) Print(*ret);
   std::cout << "float" << std::endl;
   if (auto ret = subA->GetAttribute<float>("test3"))
+    std::cout << *ret << std::endl;
+  std::cout << "std::string" << std::endl;
+  if (auto ret = subA->GetAttribute<std::string>("test4"))
     std::cout << *ret << std::endl;
 
   return 0;
