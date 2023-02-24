@@ -52,6 +52,17 @@ int main(int argc, char* argv[]) {
   if (subA->CreateDataset("test3", val3))
     std::cout << "Write successful (val3)" << std::endl;
 
+  if (subA->SetAttribute("test", val))
+    std::cout << "Write successful (val)" << std::endl;
+  if (subA->SetAttribute("test2", val2))
+    std::cout << "Write successful (val2)" << std::endl;
+  if (subA->SetAttribute("test3", val3))
+    std::cout << "Write successful (val3)" << std::endl;
+  if (subA->SetAttribute("test", val))
+    std::cout << "Second write successful (val)" << std::endl;
+  if (!subA->SetAttribute("test", val2))
+    std::cout << "Second write not successful (good) (val2)" << std::endl;
+
   if (auto ds = subA->OpenExistingDataset("test")) {
     std::cout << "std::vector<std::vector<float>>" << std::endl;
     if (auto ret = ds->Get<std::vector<std::vector<float>>>()) Print(*ret);
@@ -76,6 +87,15 @@ int main(int argc, char* argv[]) {
     std::cout << "int" << std::endl;
     if (auto ret = ds->Get<int>()) std::cout << *ret << std::endl;
   }
+
+  std::cout << "std::vector<std::vector<float>>" << std::endl;
+  if (auto ret = subA->GetAttribute<std::vector<std::vector<float>>>("test"))
+    Print(*ret);
+  std::cout << "std::vector<float>" << std::endl;
+  if (auto ret = subA->GetAttribute<std::vector<float>>("test2")) Print(*ret);
+  std::cout << "float" << std::endl;
+  if (auto ret = subA->GetAttribute<float>("test3"))
+    std::cout << *ret << std::endl;
 
   return 0;
 }
