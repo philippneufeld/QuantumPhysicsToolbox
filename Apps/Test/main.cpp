@@ -27,37 +27,55 @@ std::enable_if_t<!std::is_fundamental_v<T>> Print(const T& data) {
 
 int main(int argc, char* argv[]) {
   // prepare data
-  // std::list<std::vector<float>> val;
   std::vector<float[4]> val(5);
   for (int i = 0; i < 5; i++) {
-    // val.push_back({});
-    // for (int j = 0; j < 4; j++) val.back().push_back(1 + i * j);
-    for (int j = 0; j < 4; j++) val[i][j] = (1 + i * j);
+    for (int j = 0; j < 4; j++) val[i][j] = (1.25 + i * j);
   }
 
-  // Print(val);
-  auto serialized = Serialize(val);
-  Print(serialized.GetData(), serialized.GetSize());
-  Print(Deserialize<std::vector<std::array<float, 4>>>(serialized.GetData(),
-                                                       {5, 4}));
+  std::list<float> val2(8);
+  std::iota(val2.begin(), val2.end(), 1.1f);
 
-  auto& val2 = val.front();
-  auto serialized2 = Serialize(val2);
-  Print(serialized2.GetData(), serialized2.GetSize());
-  Print(Deserialize<std::list<float>>(serialized2.GetData(), {4}));
+  float val3 = 3.141592654;
 
   auto file = H5File::Open("test.h5", H5File_TRUNCATE);
 
   std::cout << file->HasSubgroup("subA") << std::endl;
   auto subA = file->OpenSubgroup("subA");
-  file->OpenSubgroup("subA");
-  file->OpenSubgroup("subB");
-  file->OpenSubgroup("subC");
-  std::cout << subA.has_value() << " " << file->HasSubgroup("subA")
-            << std::endl;
-
+  auto subB = file->OpenSubgroup("subB");
   auto callback = [](auto c) { std::cout << c << std::endl; };
   file->EnumerateSubgroups(callback);
+
+  if (subA->CreateDataset("test", val))
+    std::cout << "Write successful (val)" << std::endl;
+  if (subA->CreateDataset("test2", val2))
+    std::cout << "Write successful (val2)" << std::endl;
+  if (subA->CreateDataset("test3", val3))
+    std::cout << "Write successful (val3)" << std::endl;
+
+  if (auto ds = subA->OpenExistingDataset("test")) {
+    std::cout << "std::vector<std::vector<float>>" << std::endl;
+    if (auto ret = ds->Get<std::vector<std::vector<float>>>()) Print(*ret);
+    std::cout << "std::list<std::list<float>>" << std::endl;
+    if (auto ret = ds->Get<std::list<std::list<float>>>()) Print(*ret);
+    std::cout << "std::vector<std::vector<int>>" << std::endl;
+    if (auto ret = ds->Get<std::vector<std::vector<int>>>()) Print(*ret);
+  }
+
+  if (auto ds = subA->OpenExistingDataset("test2")) {
+    std::cout << "std::vector<float>" << std::endl;
+    if (auto ret = ds->Get<std::vector<float>>()) Print(*ret);
+    std::cout << "std::list<float>" << std::endl;
+    if (auto ret = ds->Get<std::list<float>>()) Print(*ret);
+    std::cout << "std::vector<int>" << std::endl;
+    if (auto ret = ds->Get<std::vector<int>>()) Print(*ret);
+  }
+
+  if (auto ds = subA->OpenExistingDataset("test3")) {
+    std::cout << "float" << std::endl;
+    if (auto ret = ds->Get<float>()) std::cout << *ret << std::endl;
+    std::cout << "int" << std::endl;
+    if (auto ret = ds->Get<int>()) std::cout << *ret << std::endl;
+  }
 
   return 0;
 }

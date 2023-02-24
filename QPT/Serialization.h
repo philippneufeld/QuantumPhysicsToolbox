@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstdint>
 #include <list>
+#include <numeric>
 #include <type_traits>
 #include <vector>
 
@@ -52,6 +53,7 @@ struct SerializationTraits<
   static std::vector<std::size_t> GetShape(const T&) { return {}; }
 
   static const Storage_t* SerializeTrivial(const Native_t& val) { return &val; }
+  static Storage_t* DeserializeTrivial(Native_t& val) { return &val; }
   static void Prepare(Native_t& val, const std::size_t* shape) {}
   static void Serialize(const Native_t& val, Storage_t* buffer) {
     *buffer = val;
@@ -86,7 +88,7 @@ struct SerializationTraits<
   static void GetShape(const T& val, std::size_t* shape) {
     shape[0] = SerializationTraitsHelper<T>::GetSize(val);
     if (shape[0] != 0)
-      Inner_t::GetShape(val[0], shape + 1);
+      Inner_t::GetShape(*std::begin(val), shape + 1);
     else
       std::fill(shape + 1, shape + GetRank(), 0);
   }
@@ -106,6 +108,17 @@ struct SerializationTraits<
       const Storage_t*>
   SerializeTrivial(const Dummy& val) {
     return SerializationTraitsHelper<Dummy>::SerializeTrivial(val);
+  }
+  template <typename Dummy = T>
+  static std::enable_if_t<
+      std::is_same_v<void,
+                     std::void_t<decltype(SerializationTraitsHelper<Dummy>::
+                                              DeserializeTrivial(
+                                                  std::declval<Dummy>()))>> &&
+          std::is_same_v<T, Dummy>,
+      Storage_t*>
+  DeserializeTrivial(Dummy& val) {
+    return SerializationTraitsHelper<Dummy>::DeserializeTrivial(val);
   }
   static void Prepare(T& val, const std::size_t* shape) {
     std::size_t n = shape[0];
@@ -147,6 +160,11 @@ struct SerializationTraitsHelper<T[N]> {
   SerializeTrivial(const T (&val)[N]) {
     return val;
   }
+  template <typename Dummy = T>
+  static std::enable_if_t<IsSerializationTrivialNative_v<Dummy>, T*>
+  DeserializeTrivial(T (&val)[N]) {
+    return val;
+  }
   static void Prepare(T (&val)[N], std::size_t n) { assert(n == N); }
   static constexpr std::size_t GetSize(const T (&val)[N]) { return N; }
 };
@@ -156,6 +174,11 @@ struct SerializationTraitsHelper<std::array<T, N>> {
   template <typename Dummy = T>
   static std::enable_if_t<IsSerializationTrivialNative_v<Dummy>, const T*>
   SerializeTrivial(const std::array<T, N>& val) {
+    return val.data();
+  }
+  template <typename Dummy = T>
+  static std::enable_if_t<IsSerializationTrivialNative_v<Dummy>, T*>
+  DeserializeTrivial(std::array<T, N>& val) {
     return val.data();
   }
   static void Prepare(std::array<T, N>& val, std::size_t n) { assert(n == N); }
@@ -169,6 +192,11 @@ struct SerializationTraitsHelper<std::vector<T>> {
   template <typename Dummy = T>
   static std::enable_if_t<IsSerializationTrivialNative_v<Dummy>, const T*>
   SerializeTrivial(const std::vector<T>& val) {
+    return val.data();
+  }
+  template <typename Dummy = T>
+  static std::enable_if_t<IsSerializationTrivialNative_v<Dummy>, T*>
+  DeserializeTrivial(std::vector<T>& val) {
     return val.data();
   }
   static void Prepare(std::vector<T>& val, std::size_t n) { val.resize(n); }
@@ -228,8 +256,49 @@ Serializer<T> Serialize(const T& val) {
 }
 
 //
-// Deserialize
+// Deserializer
 //
+
+template <typename T, typename = void>
+class Deserializer {
+  using Storage_t = typename SerializationTraits<T>::Storage_t;
+
+ public:
+  Deserializer(T& val, const std::vector<std::size_t>& shape)
+      : m_val(val),
+        m_data(std::accumulate(shape.begin(), shape.end(), std::size_t(1),
+                               std::multiplies<std::size_t>())) {
+    SerializationTraits<T>::Prepare(m_val, shape.data());
+  }
+
+  std::size_t GetSize() const { return m_data.size(); }
+  Storage_t* GetData() { return m_data.data(); }
+  void Execute() { SerializationTraits<T>::Deserialize(m_val, m_data.data()); }
+
+ private:
+  T& m_val;
+  std::vector<Storage_t> m_data;
+};
+template <typename T>
+class Deserializer<
+    T, std::void_t<decltype(SerializationTraits<T>::DeserializeTrivial(
+           std::declval<T>()))>> {
+  using Storage_t = typename SerializationTraits<T>::Storage_t;
+
+ public:
+  Deserializer(T& val, const std::vector<std::size_t>& shape) : m_val(val) {
+    SerializationTraits<T>::Prepare(val, shape.data());
+  }
+
+  std::size_t GetSize() const { return SerializationTraits<T>::GetSize(m_val); }
+  Storage_t* GetData() {
+    return SerializationTraits<T>::DeserializeTrivial(m_val);
+  }
+  void Execute() {}
+
+ private:
+  T& m_val;
+};
 
 template <typename T>
 T Deserialize(const typename SerializationTraits<T>::Storage_t* ptr,
